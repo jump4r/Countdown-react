@@ -2,31 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import '../src/index.css';
 
-var addName, addTime;
-Date.prototype.toISODurationString = function () {
-	return "P" + this.getDurationDays() + "D" + this.getDurationHours() + "H" + this.getDurationMinutes() + "M" + this.getDurationSeconds() + "S";
-}
-Date.prototype.getDurationDays = function () {
-	return Math.floor(this.getTime() / (1000 * 60 * 60 * 24));
-}
-Date.prototype.getDurationHours = function () {
-	return Math.floor((this.getTime() % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-}
-Date.prototype.getDurationMinutes = function () {
-	return Math.floor((this.getTime() % (1000 * 60 * 60)) / (1000 * 60));
-}
-Date.prototype.getDurationSeconds = function () {
-	return Math.floor((this.getTime() % (1000 * 60)) / 1000);
+function CompileTimeRemaining(time) {
+    let days = Math.floor(time / (1000 * 60 * 60 * 24));
+    let hours = Math.floor((time % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    let minutes = Math.floor((time % (1000 * 60 * 60)) / (1000 * 60));
+    let seconds = Math.floor((time % (1000 * 60)) / 1000);
+    return (days + ' Days ' + hours + ' Hours ' + minutes + ' Minutes ' + seconds + ' Seconds.');
 }
 
 function CountdownElement(props) {
     return(
-        <tr scope='row' class='countdown-row'>
-            <td class='countdown-id'>{props.id}</td>
-            <td class='countdown-time-remaining'>{props.timeRemaining}</td>
-            <td class='countdown-end-time'>End Time</td>
+        <tr scope='row' className='countdown-row'>
+            <td className='countdown-id'>{props.id}</td>
+            <td className='countdown-time-remaining'>{CompileTimeRemaining(props.timeRemaining)}</td>
+            <td className='countdown-end-time'>{props.endDate}</td>
             <td>
-                <button class='btn btn-outline-dark btn-coutndown-remove'>&times;</button>
+                <button className='btn btn-outline-dark btn-countdown-remove' onClick={props.RemoveCountdown}>&times;</button>
             </td>
         </tr>
     );
@@ -36,32 +27,91 @@ class CountdownTable extends React.Component {
     constructor() {
         super();    
         this.state = {
-            countdowns: [
-                {
-                    id: '',
-                    timeRemaining: 0,
-                }
-            ],
+            countdowns: [],
         };
     }
 
-    OpenModal() {
-        ReactDOM.render(<Modal onClick={() => this.AddCountdown()} />, document.getElementById('modal-wrapper'));
+    componentDidMount() {
+        requestAnimationFrame(() => {this.UpdateCountdowns()});
+        this.LoadData();
     }
 
-    AddCountdown() {
-        const countdowns = this.state.countdowns;
+    OpenModal() {
+        ReactDOM.render(<Modal onClick={(idValue, endDateValue) => this.AddCountdown(idValue, endDateValue)} />, document.getElementById('modal-wrapper'));
+    }
+
+    SaveData(countdowns) {
+        console.log(JSON.stringify(countdowns));
+        window.localStorage.setItem('SaveData', JSON.stringify(countdowns));
+    }
+
+    LoadData() {
+        if (window.localStorage.getItem('SaveData')) {
+            const countdowns = JSON.parse(window.localStorage.getItem('SaveData'));
+            this.setState({
+                countdowns: countdowns,
+            });
+        }
+    }
+
+    AddCountdown(idValue, endDateValue) {
+        const countdowns = this.state.countdowns.slice();
+        const time = Math.floor(new Date(endDateValue).getTime());
+        const remaining = (time - Date.now());
         this.setState({
             countdowns: countdowns.concat([{
-                id: '',
-                timeReamining: 1,
+                id: idValue,
+                timeRemaining: remaining,
+                endDate: endDateValue,
             }]),
+        }, function() {
+            console.log(this.state.countdowns);
+            this.SaveData(this.state.countdowns.slice());
         });
-        console.log(this.state.countdowns);
+    }
+
+    RemoveCountdown(index) {
+        const countdowns = this.state.countdowns;
+        // console.log(countdowns);
+        // console.log(parseInt(index));
+        countdowns.splice(index, 1);
+        
+        this.setState({
+            countdowns: countdowns,
+        }, function() {
+            this.SaveData(countdowns);
+        });
+    }
+
+    UpdateCountdowns() {
+        const countdowns = this.state.countdowns.slice();
+        
+        for (let i = 0; i < countdowns.length; i++) {
+            const time = new Date(countdowns[i].endDate).getTime();
+            const remaining = (time - Date.now());
+            countdowns[i].timeRemaining = remaining;
+        }
+        this.setState({
+            countdowns: countdowns,
+        });
+
+        requestAnimationFrame(() => {this.UpdateCountdowns()});
     }
 
     render() {
-        const countdowns = '';
+        const countdowns = this.state.countdowns;
+        const elements = countdowns.map((countdown, i) => {
+            return (<CountdownElement
+                key={countdown.id}
+                index={parseInt(i)}
+                id={countdown.id} 
+                timeRemaining={countdown.timeRemaining} 
+                endDate={countdown.endDate} 
+                RemoveCountdown={(index) => this.RemoveCountdown(index)}
+            />);
+        });
+        
+
         return(
             <div className='countdown-class-wrapper'> 
                 <h1 className='title'>Countdown</h1>
@@ -79,7 +129,7 @@ class CountdownTable extends React.Component {
                                 <td>End Time</td>
                                 <td className='text-center'>Remove</td>
                             </tr>
-                            {/*countdowns*/}
+                            {elements}
                             <tr scope='row'>    
                                 <td className='new-button' colSpan='4'>
                                     <button id='modal-open' className='btn btn-outline-dark' onClick={() => this.OpenModal()}>
@@ -125,8 +175,8 @@ class Modal extends React.Component {
         document.querySelector('#create-countdown-modal').remove();
     }
 
-    handleSubmit() {
-        this.props.onClick();
+    handleSubmit(idValue, endDateValue) {
+        this.props.onClick(idValue, endDateValue);
         this.handleClose();
     }
 
@@ -149,7 +199,7 @@ class Modal extends React.Component {
                         </div>
                     </div>
                 <div className='modal-submit'>
-                    <button id='modal-submit-button' className='btn btn-outline-dark' onClick={() => this.handleSubmit()}>Submit</button>
+                    <button id='modal-submit-button' className='btn btn-outline-dark' onClick={() => this.handleSubmit(this.state.idValue, this.state.endDateValue)}>Submit</button>
                 </div>
             </div>
         </div>
