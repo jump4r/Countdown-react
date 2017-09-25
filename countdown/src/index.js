@@ -17,7 +17,7 @@ function CountdownElement(props) {
             <td className='countdown-time-remaining'>{CompileTimeRemaining(props.timeRemaining)}</td>
             <td className='countdown-end-time'>{props.endDate}</td>
             <td>
-                <button className='btn btn-outline-dark btn-countdown-remove' onClick={props.RemoveCountdown}>&times;</button>
+                <button className='btn btn-outline-dark btn-countdown-remove' onClick={() => props.RemoveCountdown(props.index)}>&times;</button>
             </td>
         </tr>
     );
@@ -107,7 +107,7 @@ class CountdownTable extends React.Component {
                 id={countdown.id} 
                 timeRemaining={countdown.timeRemaining} 
                 endDate={countdown.endDate} 
-                RemoveCountdown={(index) => this.RemoveCountdown(index)}
+                RemoveCountdown={index => this.RemoveCountdown(index)}
             />);
         });
         
