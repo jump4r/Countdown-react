@@ -38,7 +38,7 @@ class Modal extends React.Component {
         }
 
         this.handleIdChange = this.handleIdChange.bind(this);
-        this.handleEndDatChange = this.handleEndDateChange.bind(this);
+        this.handleEndDateChange = this.handleEndDateChange.bind(this);
     }
 
     handleIdChange(event) {
@@ -49,7 +49,7 @@ class Modal extends React.Component {
 
     handleEndDateChange(event) {
         this.setState({
-            endDateValue: event.target.value,
+            endDateValue: event.target.value.toString(),
         })
     }
 
