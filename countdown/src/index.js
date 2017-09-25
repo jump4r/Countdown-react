@@ -2,29 +2,96 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import '../src/index.css';
 
-document.addEventListener('DOMContentLoaded', _ => {
-    document.querySelector('#modal-open').addEventListener('click', OpenModal);
-});
+var addName, addTime;
+Date.prototype.toISODurationString = function () {
+	return "P" + this.getDurationDays() + "D" + this.getDurationHours() + "H" + this.getDurationMinutes() + "M" + this.getDurationSeconds() + "S";
+}
+Date.prototype.getDurationDays = function () {
+	return Math.floor(this.getTime() / (1000 * 60 * 60 * 24));
+}
+Date.prototype.getDurationHours = function () {
+	return Math.floor((this.getTime() % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+}
+Date.prototype.getDurationMinutes = function () {
+	return Math.floor((this.getTime() % (1000 * 60 * 60)) / (1000 * 60));
+}
+Date.prototype.getDurationSeconds = function () {
+	return Math.floor((this.getTime() % (1000 * 60)) / 1000);
+}
 
-class CountdownElement extends React.Component {
+function CountdownElement(props) {
+    return(
+        <tr scope='row' class='countdown-row'>
+            <td class='countdown-id'>{props.id}</td>
+            <td class='countdown-time-remaining'>{props.timeRemaining}</td>
+            <td class='countdown-end-time'>End Time</td>
+            <td>
+                <button class='btn btn-outline-dark btn-coutndown-remove'>&times;</button>
+            </td>
+        </tr>
+    );
+}
+
+class CountdownTable extends React.Component {
     constructor() {
-        super();
+        super();    
         this.state = {
-            id: '',
-            timeRemaining: 0,
-        }
+            countdowns: [
+                {
+                    id: '',
+                    timeRemaining: 0,
+                }
+            ],
+        };
+    }
+
+    OpenModal() {
+        ReactDOM.render(<Modal onClick={() => this.AddCountdown()} />, document.getElementById('modal-wrapper'));
+    }
+
+    AddCountdown() {
+        const countdowns = this.state.countdowns;
+        this.setState({
+            countdowns: countdowns.concat([{
+                id: '',
+                timeReamining: 1,
+            }]),
+        });
+        console.log(this.state.countdowns);
     }
 
     render() {
+        const countdowns = '';
         return(
-            <tr scope='row' class='countdown-row'>
-                <td class='countdown-id'>{this.state.id}</td>
-                <td class='countdown-time-remaining'>{this.state.timeRemaining}</td>
-                <td class='countdown-end-time'>End Time</td>
-                <td>
-                    <button class='btn btn-outline-dark btn-coutndown-remove'>&times;</button>
-                </td>
-            </tr>
+            <div className='countdown-class-wrapper'> 
+                <h1 className='title'>Countdown</h1>
+                <div className='table-wrapper'>
+                    <table className='table'>
+                        <thead>
+                            <tr scope='row'>
+                                <th colSpan='4'>Your Countdowns</th>    
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr scope='row'>
+                                <td>Countdown Label</td>
+                                <td>Time Remaining</td>
+                                <td>End Time</td>
+                                <td className='text-center'>Remove</td>
+                            </tr>
+                            {/*countdowns*/}
+                            <tr scope='row'>    
+                                <td className='new-button' colSpan='4'>
+                                    <button id='modal-open' className='btn btn-outline-dark' onClick={() => this.OpenModal()}>
+                                        New Countdown
+                                        <span className="glyphicon glyphicon-asterisk"></span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         );
     }
 }
@@ -50,7 +117,17 @@ class Modal extends React.Component {
     handleEndDateChange(event) {
         this.setState({
             endDateValue: event.target.value.toString(),
-        })
+        });
+    }
+
+    
+    handleClose() {
+        document.querySelector('#create-countdown-modal').remove();
+    }
+
+    handleSubmit() {
+        this.props.onClick();
+        this.handleClose();
     }
 
     render() {
@@ -78,18 +155,7 @@ class Modal extends React.Component {
         </div>
         );
     }
-
-    handleClose() {
-        document.querySelector('#create-countdown-modal').remove();
-    }
-
-    handleSubmit() {
-        this.handleClose();
-    }
-}
-
-function OpenModal() {
-    ReactDOM.render(<Modal />, document.getElementById('modal-wrapper'));
 }
 
 // ------------------------------------------------------------------
+ReactDOM.render(<CountdownTable />, document.getElementById('countdown-wrapper'));
